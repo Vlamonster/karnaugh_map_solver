@@ -1,5 +1,9 @@
+use clap::Parser;
 use itertools::Itertools;
 use std::collections::HashSet;
+use std::fs;
+use std::fs::File;
+use std::io::Write;
 
 fn reduce(
     map: &[Option<usize>], // Karnaugh map
@@ -26,8 +30,7 @@ fn reduce(
     }
 }
 
-fn karnaugh(map: &[Option<usize>]) -> HashSet<String> {
-    let n = map.len().ilog2() as usize;
+fn karnaugh(map: &[Option<usize>], n: usize) -> HashSet<String> {
     let mut min_terms = HashSet::new();
     let mut dims = Vec::with_capacity(n);
     for (i, &val) in map.iter().enumerate() {
@@ -47,101 +50,41 @@ fn karnaugh(map: &[Option<usize>]) -> HashSet<String> {
     min_terms
 }
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Input file to use.
+    #[arg(short, long)]
+    input: String,
+
+    /// Number of variables.
+    #[arg(short, long)]
+    nums: usize,
+
+    /// Generate an input file.
+    #[arg(short, long)]
+    generate: bool,
+}
+
 fn main() {
-    // 3 variable map (https://tinyurl.com/mt33tp33):
-    let map = [
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(0),
-        Some(1),
-        Some(1),
-        Some(0),
-    ];
+    let args = Args::parse();
 
-    println!("min-terms for 3-variable map: {:?}", karnaugh(&map));
-
-    // 6 variable map (https://tinyurl.com/mphrf63h):
-    let map = [
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(1),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-        Some(0),
-    ];
-
-    println!("min-terms for 6-variable map: {:?}", karnaugh(&map));
-
-    let map = [
-        Some(0),
-        Some(1),
-        None,
-        Some(0),
-        Some(1),
-        None,
-        Some(0),
-        Some(1),
-    ];
-
-    println!("min-terms for 6-variable map: {:?}", karnaugh(&map));
+    if args.generate {
+        let mut file = File::create(args.input).unwrap();
+        for i in 0..1 << args.nums {
+            let _ = file.write(format!("{i:0n$b}: \n", n = args.nums).as_bytes());
+        }
+    } else {
+        let input = fs::read_to_string(args.input).unwrap();
+        let map = input
+            .lines()
+            .map(|line| match line.split_whitespace().nth(1).unwrap_or("x") {
+                "x" => None,
+                "1" => Some(1),
+                "0" => Some(0),
+                _ => panic!("Incorrectly formatted input, line: {line}."),
+            })
+            .collect::<Vec<_>>();
+        println!("{:?}", karnaugh(&map, args.nums));
+    }
 }
