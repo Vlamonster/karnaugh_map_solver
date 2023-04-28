@@ -85,6 +85,18 @@ fn main() {
                 _ => panic!("Incorrectly formatted input, line: {line}."),
             })
             .collect::<Vec<_>>();
-        println!("{:?}", karnaugh(&map, args.nums));
+        println!("normal: {:?}", karnaugh(&map, args.nums));
+
+        // shitty code, but it works.
+        let map = map
+            .iter()
+            .map(|x| match x {
+                None => None,
+                Some(0) => Some(1),
+                Some(1) => Some(0),
+                _ => panic!(),
+            })
+            .collect_vec();
+        println!("inverted: {:?}", karnaugh(&map, args.nums));
     }
 }
